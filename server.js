@@ -11,6 +11,7 @@ const app = express();
 
 // Sends the chat page (everything in the public folder) to the browser.
 app.use(express.static("public"));
+app.use(express.json());
 
 // ---------- Station U: read JSON bodies ----------
 
@@ -24,37 +25,104 @@ const db = await setUpChat(app, connectDB, seedDatabase);
 // Signs up a new user. 400 if the username breaks the rules, 409 if it's taken.
 // Everyone who signs up joins the West-MEC Lounge.
 app.post("/api/users", async (req, res) => {
-  res.status(501).json({ error: "POST /api/users is not built yet (Station U)" });
+
+  const now = new Date();
+  const user = {
+    _id: req.body.username,
+    displayName: req.body.displayName,
+    createdAt: now
+  };
+
+  await db.collection("users").insertOne(user);
+  return res.status(201).json(user);
 });
 
 // GET /api/users/:username: signs in. Sends back ONE user, or 404 if there's no one with that username.
 app.get("/api/users/:username", async (req, res) => {
-  res.status(501).json({ error: "GET /api/users/:username is not built yet (Station U)" });
+  const userName = req.params.username;
+  const user = await db.collection("users").findOne({ _id: userName });
+  if (user == null) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  return res.json(user);
 });
 
 // GET /api/users: sends back an array of every user, A to Z (the People list).
 app.get("/api/users", async (req, res) => {
-  res.status(501).json({ error: "GET /api/users is not built yet (Station U)" });
+  try {
+    const allUsers = await db.collection("users").find().toArray();
+    return res.json(allUsers);
+  }
+
+  catch
+  {
+    res.status(400).json({success:false, message:"Users not found successfully."});
+  }
+
 });
 
 // ---------- Day 3: Conversations ----------
 // GET /api/chats?user=alan: sends back every chat that user is a member of, newest first.
 app.get("/api/chats", async (req, res) => {
-  res.status(501).json({ error: "GET /api/chats is not built yet (Day 3)" });
+    try
+    {
+      const userMessage = await db.collection("chats").find({members: req.query.username});
+      res.status(200).json({ success: true, message: "Messages found Successfully" });
+      return res.json(userMessage);
+    }
+
+    catch
+    {
+      res.status(400).json({success: false, message: "Messages cannot be grabbed."});
+    }
 });
 
 // POST /api/chats/direct   body: { "from": "alan", "to": "maria" }
 // Opens a direct message between two people. Already have one? Sends that one back (200).
 // New one? 201. 400 if someone is missing or it's yourself, 404 if either user doesn't exist.
 app.post("/api/chats/direct", async (req, res) => {
-  res.status(501).json({ error: "POST /api/chats/direct is not built yet (Day 3)" });
+  try
+  {
+    const firstUser = req.body.from;
+    const secondUser = req.body.to;
+    const returningChat = await db.collection("chats").find({ field: { $in: [firstUser, secondUser] } })
+    if(returningChat == null)
+    {
+      res.status(200).json({success: true, message: "Previous chat found successfully"});
+      return res.json(returningChat);
+    }
+    const now = new Date();
+    const chat = {
+      type: "direct",
+      name: "Direct Message",
+      members: [firstUser, secondUser],
+      createdBy:now,
+      createdAt:now
+    };
+    await db.collection("chats").insertOne(chat)
+    return res.json(chat);
+  }
+
+  catch
+  {
+    res.status(404).json({success:false, message: "Eror when creating direct message"});
+  }
 });
 
 // POST /api/chats/group   body: { "from": "alan", "name": "Study Group", "members": ["maria", "jay"] }
 // Starts a group chat. The person who starts it is in it too.
 // 400 if there's no name or no one else, 404 if anyone isn't a user.
 app.post("/api/chats/group", async (req, res) => {
-  res.status(501).json({ error: "POST /api/chats/group is not built yet (Day 3)" });
+
+  try
+  {
+
+  }
+
+  catch
+  {
+
+  }
 });
 
 // ---------- Day 4: Messages ----------
