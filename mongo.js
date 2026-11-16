@@ -46,19 +46,22 @@ export async function seedDatabase(db) {
   await chats.insertOne({
     _id: chatId,
     name: "West-MEC Lounge",
+    members: ["wmbot"],
+    type: "group",
+    lastMessage: null,
     createdAt: now,
     updatedAt: now,
   });
 
   await messages.insertOne({
     chatId: chatId,
+    from: "wmbot",
     text: welcome,
     sentAt: now,
   });
 
   return true;
 }
-
 
 
 
